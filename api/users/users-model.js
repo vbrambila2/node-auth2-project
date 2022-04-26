@@ -40,6 +40,7 @@ function findBy(filter) {
   return db('users')
     .join('roles', 'users.role_id', 'roles.role_id')
     .select('users.user_id', 'users.username', 'users.password', 'roles.role_name')
+    .where(filter)
 }
 
 function findById(user_id) {

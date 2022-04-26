@@ -1,6 +1,9 @@
 const router = require("express").Router();
 const { checkUsernameExists, validateRoleName } = require('./auth-middleware');
 const { JWT_SECRET } = require("../secrets"); // use this secret!
+const bcrypt = require("bcryptjs/dist/bcrypt");
+const User = require('../users/users-model');
+const jwt = require('jsonwebtoken')
 
 router.post("/register", validateRoleName, (req, res, next) => {
   /**
@@ -14,6 +17,16 @@ router.post("/register", validateRoleName, (req, res, next) => {
       "role_name": "angel"
     }
    */
+  const hash = bcrypt.hashSync(req.body.password, 8)
+  req.body.password = hash
+
+  User.add(req.body)
+    .then(saved => {
+      res.status(201).json(saved)
+    })
+    .catch(() => {
+      next({ status: 500, message: '500 error register' })
+    })
 });
 
 
@@ -37,6 +50,33 @@ router.post("/login", checkUsernameExists, (req, res, next) => {
       "role_name": "admin" // the role of the authenticated user
     }
    */
+  let { username, password } = req.body
+    User.findBy({ username })
+      .then(([user]) => {
+        if(user && bcrypt.compareSync(password, user.password)) {
+          res.status(200).json({
+            message: `${user.username} id back!`,
+            token: generateToken(user)
+          })
+        } else {
+          next({ status: 401, message: 'invalid credentials buddy' })
+        }
+      })
+      .catch(() => {
+        next({ status: 500, message: '500 error login' })
+      })
 });
+
+function generateToken(user) {
+  const payload = {
+    subject: user.id,
+    username: user.username,
+    role_name: user.role_name
+  };
+  const options = {
+    expiresIn: '1d'
+  };
+  return jwt.sign(payload, JWT_SECRET , options)
+}
 
 module.exports = router;

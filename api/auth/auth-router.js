@@ -19,12 +19,12 @@ router.post("/register", validateRoleName, (req, res, next) => {
    */
   const hash = bcrypt.hashSync(req.body.password, 8)
   req.body.password = hash
-
   User.add(req.body)
     .then(saved => {
       res.status(201).json(saved)
     })
-    .catch(() => {
+    .catch((err) => {
+      console.log(err)
       next({ status: 500, message: '500 error register' })
     })
 });
@@ -55,7 +55,7 @@ router.post("/login", checkUsernameExists, (req, res, next) => {
       .then(([user]) => {
         if(user && bcrypt.compareSync(password, user.password)) {
           res.status(200).json({
-            message: `${user.username} id back!`,
+            message: `${user.username} is back!`,
             token: generateToken(user)
           })
         } else {
@@ -74,7 +74,7 @@ function generateToken(user) {
     role_name: user.role_name
   };
   const options = {
-    expiresIn: '1d'
+    expiresIn: '1d',
   };
   return jwt.sign(payload, JWT_SECRET , options)
 }

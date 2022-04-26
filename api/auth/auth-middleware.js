@@ -29,10 +29,10 @@ const restricted = (req, res, next) => {
    if(err) {
      next({ status: 401, message: "Token invalid" })
    }
- })
 
- req.decodedJwt = decodedToken;
- next();
+   req.decodedJwt = decodedToken;
+   next();
+ })
 }
 
 const only = role_name => (req, res, next) => {
@@ -95,17 +95,19 @@ const validateRoleName = (req, res, next) => {
       "message": "Role name can not be longer than 32 chars"
     }
   */
- if(!req.body.role_name || req.body.role_name.trim() === "") {
-  req.role_name = 'student'
-  next()
+ const student = 'student';
+
+ if (!req.body.role_name || req.body.role_name.trim() === '') {
+    req.body.role_name = student
+    next()
  } else if(req.body.role_name.trim() === 'admin') {
-  next({ status: 422, message: "Role name can not be admin" })
+    next({ status: 422, message: "Role name can not be admin" })
  } else if (req.body.role_name.length > 32) {
-   next({ status: 422, message: "Role name can not be longer than 32 chars" })
- } else {
-   req.role_name = req.body.role_name.trim()
-   next()
- }
+    next({ status: 422, message: "Role name can not be longer than 32 chars" })
+ } else if(req.body.role_name) {
+  req.role_name = req.body.role_name.trim()
+  next()
+} 
 }
 
 module.exports = {

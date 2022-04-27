@@ -17,16 +17,15 @@ router.post("/register", validateRoleName, (req, res, next) => {
       "role_name": "angel"
     }
    */
-  const hash = bcrypt.hashSync(req.body.password, 8)
-  req.body.password = hash
-  User.add(req.body)
+  const { username, password } = req.body;
+  const { role_name } = req;
+  const hash = bcrypt.hashSync(password, 8);
+
+  User.add({ username, password: hash, role_name })
     .then(saved => {
       res.status(201).json(saved)
     })
-    .catch((err) => {
-      console.log(err)
-      next({ status: 500, message: '500 error register' })
-    })
+    .catch(next)
 });
 
 
@@ -50,26 +49,32 @@ router.post("/login", checkUsernameExists, (req, res, next) => {
       "role_name": "admin" // the role of the authenticated user
     }
    */
-  let { username, password } = req.body
-    User.findBy({ username })
-      .then(([user]) => {
-        if(user && bcrypt.compareSync(password, user.password)) {
-          res.status(200).json({
-            message: `${user.username} is back!`,
-            token: generateToken(user)
-          })
-        } else {
-          next({ status: 401, message: 'invalid credentials buddy' })
-        }
-      })
-      .catch(() => {
-        next({ status: 500, message: '500 error login' })
-      })
+  if(bcrypt.compareSync(req.body.password, req.user.password)) {
+    const token = generateToken(req.user)
+    res.json({ message: `${req.user.username} is back!`, token })
+  } else {
+    next({ status: 401, message: 'Invalid credentials' })
+  }
+  // let { username, password } = req.body
+  //   User.findBy({ username })
+  //     .then(([user]) => {
+  //       if(user && bcrypt.compareSync(password, user.password)) {
+  //         res.status(200).json({
+  //           message: `${user.username} is back!`,
+  //           token: generateToken(user)
+  //         })
+  //       } else {
+  //         next({ status: 401, message: 'invalid credentials buddy' })
+  //       }
+  //     })
+  //     .catch(() => {
+  //       next({ status: 500, message: '500 error login' })
+  //     })
 });
 
 function generateToken(user) {
   const payload = {
-    subject: user.id,
+    subject: user.user_id,
     username: user.username,
     role_name: user.role_name
   };
